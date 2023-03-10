@@ -12,4 +12,7 @@ public class InputLineReader {
     public String readNextLine() {
         return scanner.nextLine();
     }
+    public boolean hasNextLine() {
+        return scanner.hasNextLine();
+    }
 }

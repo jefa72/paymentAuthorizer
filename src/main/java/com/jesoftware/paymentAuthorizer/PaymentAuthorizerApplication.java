@@ -1,10 +1,10 @@
 package com.jesoftware.paymentAuthorizer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.jesoftware.paymentAuthorizer.model.GlobalPaymentRule;
-import com.jesoftware.paymentAuthorizer.model.PaymentRules;
+import com.jesoftware.paymentAuthorizer.model.*;
 import com.jesoftware.paymentAuthorizer.service.InputLineReader;
 import com.jesoftware.paymentAuthorizer.service.PaymentObjectMapper;
+import com.jesoftware.paymentAuthorizer.service.PaymentStateService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -18,17 +18,37 @@ public class PaymentAuthorizerApplication {
 	}
 
 	@Bean
-	CommandLineRunner runPaymentAuthorizer (PaymentObjectMapper paymentObjectMapper, InputLineReader inputLineReader) {
+	CommandLineRunner runPaymentAuthorizer (PaymentObjectMapper paymentObjectMapper,
+											InputLineReader inputLineReader, PaymentStateService paymentStateService) {
 		return args -> {
 
-			String nextLine = inputLineReader.readNextLine();
-			try {
-				GlobalPaymentRule globalPaymentRule = paymentObjectMapper.deserializeJson(nextLine, GlobalPaymentRule.class);
-				String globalPaymentRuleString = paymentObjectMapper.serializeObject(globalPaymentRule);
-				System.out.println("Serialized object is: " + globalPaymentRuleString);
-			} catch (JsonProcessingException e) {
-				System.out.println("JsonProcessingException caught: " + e);
+			while (inputLineReader.hasNextLine()) {
+				String nextLine = inputLineReader.readNextLine();
+				try {
+
+					GlobalPaymentRule globalPaymentRule =
+							paymentObjectMapper.deserializeJson(nextLine, GlobalPaymentRule.class);
+					paymentStateService.setGlobalRule(globalPaymentRule.getPaymentRules().getMaxLimit());
+
+				} catch (JsonProcessingException e1) {
+					try {
+
+						PaymentSessionCreate paymentSessionCreate =
+								paymentObjectMapper.deserializeJson(nextLine, PaymentSessionCreate.class);
+						paymentStateService.setPaymentSession(paymentSessionCreate.getPaymentSession().getPaymentId());
+
+					} catch (JsonProcessingException e2) {
+
+
+
+					}
+
+
+				}
 			}
+
+
+
 		};
 	}
 
